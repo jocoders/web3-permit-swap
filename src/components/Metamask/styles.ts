@@ -8,7 +8,7 @@ export const ButtonDisconnect = styled(ButtonBase)`
 export const Container = styled.div`
   display: flex;
   flex-direction: column;
-  padding-left: 100px;
+  width: 500px;
 `
 
 export const RowBalance = styled.div`

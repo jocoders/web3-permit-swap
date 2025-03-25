@@ -21,8 +21,9 @@ export const Container = styled.div`
   flex: 1;
   flex-direction: column;
   padding: 50px;
-  overflow-y: auto;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 `
 
 export const ContentContainer = styled.div`

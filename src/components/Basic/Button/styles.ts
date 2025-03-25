@@ -1,9 +1,10 @@
 import styled, { css } from 'styled-components'
-import { ButtonType } from './Button'
 import { COLORS } from '../../../theme/colors'
+import { ButtonType } from './Button'
 
 interface ButtonProps {
   buttonType?: ButtonType
+  isFullWidth?: boolean
 }
 
 const customShouldForwardProp = (prop: string) => prop !== 'buttonType'
@@ -18,6 +19,7 @@ export const BaseButton = styled('button').withConfig({
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.3s;
+  width: ${({ isFullWidth }) => (isFullWidth ? '100%' : 'auto')};
 
   ${(props) =>
     props.buttonType === 'primary' &&

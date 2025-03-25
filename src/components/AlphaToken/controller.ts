@@ -2,7 +2,7 @@ import { readContract, simulateContract } from '@wagmi/core'
 import { useState } from 'react'
 import { useReadContract, useWriteContract } from 'wagmi'
 
-import { parseEther } from 'viem'
+import { formatEther, parseEther } from 'viem'
 import { config } from '../../config'
 import { PERMIT_TOKEN_ABI, TOKEN_ALPHA_ADDRESS } from '../../const/contract'
 
@@ -67,7 +67,8 @@ export function useAlphaTokenController() {
         functionName: 'balanceOf',
         args: [userBalanceAddress as `0x${string}`]
       })
-      setUserBalance(Number(result).toString())
+      const balanceInEth = formatEther(result)
+      setUserBalance(balanceInEth)
     } catch (error) {
       setUserBalanceError(error as string)
     }
