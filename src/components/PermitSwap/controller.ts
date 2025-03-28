@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { parseEther } from 'viem'
 import { useAccount, useSignTypedData, useWriteContract } from 'wagmi'
-import { simulateContract } from 'wagmi/actions'
+import { simulateContract, waitForTransactionReceipt } from 'wagmi/actions'
 import { config } from '../../config'
 import { PERMIT_SWAP_ABI, PERMIT_SWAP_ADDRESS, TOKEN_ALPHA_ADDRESS, TOKEN_BETA_ADDRESS } from '../../const/contract'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
@@ -55,7 +55,7 @@ export function usePermitSwapController() {
   const { orders, orderId } = useAppSelector((state) => state.orders)
 
   const { address } = useAccount()
-  const { writeContract } = useWriteContract()
+  const { writeContractAsync } = useWriteContract()
   const { signTypedDataAsync } = useSignTypedData()
 
   const [tokenSell, setTokenSell] = useState<TSwitcherItem>(SWITCHERS[0])
@@ -68,6 +68,9 @@ export function usePermitSwapController() {
 
   const [signError, setSignError] = useState<string>('')
   const [swapError, setSwapError] = useState<string>('')
+
+  const [isLoading, setIsLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const createOrder = async () => {
     try {
@@ -103,15 +106,11 @@ export function usePermitSwapController() {
           ]
         }
       } as const
+
       const signature = await signTypedDataAsync(data)
-
-      console.log('SIGN_DATA', data)
-
       const r = signature.slice(0, 66)
       const s = '0x' + signature.slice(66, 130)
       const v = parseInt(signature.slice(130, 132), 16)
-
-      //console.log('SIGNATURE', { v, r, s })
 
       if (!!v && !!r && !!s) {
         const newOrder: TOrderItem = {
@@ -151,6 +150,8 @@ export function usePermitSwapController() {
   }
 
   const executeOrders = async () => {
+    setIsLoading(true)
+
     const findMatchingOrders = (): [TOrderItem, TOrderItem] | null => {
       for (let i = 0; i < orders?.length; i++) {
         for (let j = i + 1; j < orders?.length; j++) {
@@ -185,19 +186,6 @@ export function usePermitSwapController() {
     }
 
     try {
-      console.log('SEND_DATA1', {
-        ...order1.order,
-        deadline: BigInt(order1.order.deadline),
-        amountSell: parseEther(order1.order.amountSell),
-        amountBuy: parseEther(order1.order.amountBuy)
-      })
-      console.log('SEND_DATA2', {
-        ...order2.order,
-        deadline: BigInt(order2.order.deadline),
-        amountBuy: parseEther(order2.order.amountBuy),
-        amountSell: parseEther(order2.order.amountSell)
-      })
-
       const { request } = await simulateContract(config, {
         abi: PERMIT_SWAP_ABI,
         address: PERMIT_SWAP_ADDRESS,
@@ -220,12 +208,28 @@ export function usePermitSwapController() {
         ]
       })
 
-      await writeContract(request)
-      dispatch(removeOrders([order1.order.orderId, order2.order.orderId]))
+      const hash = await writeContractAsync(request)
+
+      if (!hash) {
+        throw new Error('Transaction failed - no hash received')
+      }
+
+      const receipt = await waitForTransactionReceipt(config, {
+        hash
+      })
+
+      if (receipt.status === 'success') {
+        dispatch(removeOrders([order1.order.orderId, order2.order.orderId]))
+        setSuccessMessage('Swap was successful!')
+      } else {
+        throw new Error('Transaction failed')
+      }
     } catch (error) {
       console.error('Error executing orders:', error)
       setSwapError(error as string)
       throw error
+    } finally {
+      setIsLoading(false)
     }
   }
   return {
@@ -235,6 +239,7 @@ export function usePermitSwapController() {
     clearOrders: () => dispatch(clearOrders()),
     deadline,
     executeOrders,
+    isLoading,
     nonce,
     orders,
     setNonce,
@@ -247,6 +252,7 @@ export function usePermitSwapController() {
     swapError,
     tokenSell,
     tokenBuy,
-    switchers: SWITCHERS
+    switchers: SWITCHERS,
+    successMessage
   }
 }

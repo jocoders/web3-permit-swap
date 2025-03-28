@@ -1,5 +1,5 @@
 import permitSwapLogo from '../../../public/permit.webp'
-import { Button, Col, Header, Image, Input, Picker, Row, Spacer, Text } from '../Basic'
+import { Button, Col, Header, Image, Input, Picker, Row, Spacer, Spinner, Text } from '../Basic'
 import { Switcher } from '../Switcher'
 
 import { usePermitSwapController as useController } from './controller'
@@ -11,6 +11,8 @@ import {
   RowButtons,
   RowErrorContainer,
   RowSwitcher,
+  SuccessMessage,
+  SuccessText,
   TextError,
   Wrapper
 } from './styles'
@@ -23,6 +25,7 @@ export const PermitSwap = () => {
     clearOrders,
     deadline,
     executeOrders,
+    isLoading,
     nonce,
     orders,
     setNonce,
@@ -35,7 +38,8 @@ export const PermitSwap = () => {
     swapError,
     tokenSell,
     tokenBuy,
-    switchers
+    switchers,
+    successMessage
   } = useController()
 
   return (
@@ -93,7 +97,16 @@ export const PermitSwap = () => {
           </RowButtons>
           <Spacer height={10} />
           <OrdersContainer>
-            {orders?.length > 0 ? (
+            {isLoading ? (
+              <EmptyOrders>
+                <Spinner size={40} />
+                <Text>Processing swap...</Text>
+              </EmptyOrders>
+            ) : successMessage ? (
+              <SuccessMessage>
+                <SuccessText>{successMessage}</SuccessText>
+              </SuccessMessage>
+            ) : orders?.length > 0 ? (
               orders.map((item) => <OrderItem key={item.order.orderId} order={item.order} />)
             ) : (
               <EmptyOrders>

@@ -81,6 +81,24 @@ export const RowButtons = styled.div`
   justify-content: space-between;
 `
 
+export const SuccessMessage = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(76, 175, 80, 0.1);
+  border-radius: 8px;
+  margin: 20px 0;
+`
+
+export const SuccessText = styled.div`
+  color: #4caf50;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+`
+
 export const TextError = styled.text`
   color: red;
   font-weight: bold;
