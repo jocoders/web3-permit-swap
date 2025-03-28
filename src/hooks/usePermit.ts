@@ -1,13 +1,9 @@
-import { encodeAbiParameters, parseEther } from 'viem'
-import { keccak256 } from 'viem'
-import { toHex } from 'viem'
-import Contracts from '../components/Contracts'
-import { MAX_UINT256, ZERO_ADDRESS, ZERO_BYTES32 } from './Constants'
-import { NATIVE_TOKEN_ADDRESS } from './TokenData'
-import { Addressable } from './Types'
-import { signTypedData, SignTypedDataVersion, TypedDataUtils } from '@metamask/eth-sig-util'
+import { signTypedData, SignTypedDataVersion } from '@metamask/eth-sig-util'
 import { fromRpcSig } from 'ethereumjs-util'
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { encodeAbiParameters, keccak256, parseEther, toHex } from 'viem'
+import Contracts from '../components/Contracts'
+import { Addressable } from './Types'
 
 const VERSION = '1'
 const SEPOLIA_CHAIN_ID = 11155111
@@ -109,3 +105,35 @@ export const permitSignature = async (
     BigNumber.from(deadline)
   )
 }
+
+// const structHash = keccak256(
+//   encodeAbiParameters(
+//     [
+//       { type: 'bytes32' }, // PERMIT_TYPEHASH
+//       { type: 'address' }, // owner
+//       { type: 'address' }, // spender
+//       { type: 'uint256' }, // value
+//       { type: 'uint256' }, // nonce
+//       { type: 'uint256' } // deadline
+//     ],
+//     [
+//       PERMIT_TYPE_HASH as `0x${string}`,
+//       address as `0x${string}`,
+//       PERMIT_SWAP_ADDRESS as `0x${string}`,
+//       parseEther(amountSell),
+//       BigInt(nonce),
+//       BigInt(getDeadlineTimestamp())
+//     ]
+//   )
+// )
+// const txHash = keccak256(
+//   concat([
+//     '0x1901', // \x19\x01
+//     domainSeparator as `0x${string}`, // domainSeparator
+//     structHash // structHash
+//   ])
+// )
+// const signature = await signMessage(config, {
+//   message: txHash,
+//   account: address as `0x${string}`
+// } as SignMessageParameters)

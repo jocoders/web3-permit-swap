@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { encodeAbiParameters, keccak256, parseEther, toHex } from 'viem'
+import { parseEther } from 'viem'
 import { useAccount, useSignTypedData, useWriteContract } from 'wagmi'
 import { simulateContract } from 'wagmi/actions'
 import { config } from '../../config'
@@ -34,10 +34,8 @@ const SECONDS_IN_DAY = 86400 // 24 * 60 * 60
 
 const ALPHA_DOMAIN_SEPARATOR = '0x6360f82815bc3054eae15149536b076fed05fc7f558b425ce87df59b86e5085b'
 const BETA_DOMAIN_SEPARATOR = '0x9f8166df02fc2ad05843ee33da155c9896a951815987c3dbe7f608fadf29af6c'
-const PERMIT_TYPE_HASH = '0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9'
 const SEPOLIA_CHAIN_ID = 11155111
 const VERSION = '1'
-const PERMIT_TYPE: 'EIP712Domain' | 'Permit' = 'Permit'
 
 const SWITCHERS: TSwitcherItem[] = [
   {
@@ -50,21 +48,6 @@ const SWITCHERS: TSwitcherItem[] = [
     domainSeparator: BETA_DOMAIN_SEPARATOR,
     address: TOKEN_BETA_ADDRESS
   }
-]
-
-const EIP712_DOMAIN = [
-  { name: 'name', type: 'string' },
-  { name: 'version', type: 'string' },
-  { name: 'chainId', type: 'uint256' },
-  { name: 'verifyingContract', type: 'address' }
-]
-
-const PERMIT = [
-  { name: 'owner', type: 'address' },
-  { name: 'spender', type: 'address' },
-  { name: 'value', type: 'uint256' },
-  { name: 'nonce', type: 'uint256' },
-  { name: 'deadline', type: 'uint256' }
 ]
 
 export function usePermitSwapController() {
@@ -88,10 +71,11 @@ export function usePermitSwapController() {
 
   const createOrder = async () => {
     try {
+      const deadline = BigInt(getDeadlineTimestamp())
       const data = {
         domain: {
           name: tokenSell.name,
-          version: '1',
+          version: VERSION,
           chainId: BigInt(SEPOLIA_CHAIN_ID),
           verifyingContract: tokenSell.address as `0x${string}`
         },
@@ -100,7 +84,7 @@ export function usePermitSwapController() {
           spender: PERMIT_SWAP_ADDRESS,
           value: parseEther(amountSell),
           nonce: BigInt(nonce),
-          deadline: BigInt(getDeadlineTimestamp())
+          deadline
         },
         primaryType: 'Permit',
         types: {
@@ -127,7 +111,7 @@ export function usePermitSwapController() {
       const s = '0x' + signature.slice(66, 130)
       const v = parseInt(signature.slice(130, 132), 16)
 
-      console.log('SIGNATURE', { v, r, s })
+      //console.log('SIGNATURE', { v, r, s })
 
       if (!!v && !!r && !!s) {
         const newOrder: TOrderItem = {
@@ -138,7 +122,7 @@ export function usePermitSwapController() {
             amountSell: amountSell,
             amountBuy: amountBuy,
             orderId,
-            deadline: getDeadlineTimestamp().toString()
+            deadline: deadline.toString()
           },
           signature: {
             v,
@@ -161,7 +145,6 @@ export function usePermitSwapController() {
       throw error
     }
   }
-
   const getDeadlineTimestamp = () => {
     const currentTimestamp = Math.floor(Date.now() / 1000)
     return currentTimestamp + Number(deadline) * SECONDS_IN_DAY
@@ -211,8 +194,8 @@ export function usePermitSwapController() {
       console.log('SEND_DATA2', {
         ...order2.order,
         deadline: BigInt(order2.order.deadline),
-        amountSell: parseEther(order2.order.amountSell),
-        amountBuy: parseEther(order2.order.amountBuy)
+        amountBuy: parseEther(order2.order.amountBuy),
+        amountSell: parseEther(order2.order.amountSell)
       })
 
       const { request } = await simulateContract(config, {
